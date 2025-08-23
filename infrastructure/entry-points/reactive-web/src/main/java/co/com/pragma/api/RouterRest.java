@@ -5,10 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.server.RouterFunction;
-import org.springframework.web.reactive.function.server.RouterFunctions;
 import org.springframework.web.reactive.function.server.ServerResponse;
-
-import java.util.logging.Handler;
 
 import static org.springframework.web.reactive.function.server.RequestPredicates.*;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
@@ -19,10 +16,14 @@ import static org.springframework.web.reactive.function.server.RouterFunctions.r
 public class RouterRest {
 
     private final UserPath userPath;
-    private final HandlerV1 userHandler;
+    private final UserHandler userHandler;
 
     @Bean
-    public RouterFunction<ServerResponse> routerFunction(HandlerV1 handler) {
-        return route(POST("/users"), userHandler::listenSaveUser);
+    public RouterFunction<ServerResponse> routerFunction(UserHandler handler) {
+        return route(POST(userPath.getUsers()), userHandler::listenSaveUser)
+                .andRoute(PUT(userPath.getUsers()), userHandler::listenUpdateUser)
+                .andRoute(DELETE(userPath.getUsersById()), userHandler::listenDeleteUser)
+                .andRoute(GET(userPath.getUsers()), userHandler::listenGetAllUsers)
+                .andRoute(GET(userPath.getUsersById()), userHandler::listenGetUserById);
     }
 }

@@ -19,6 +19,6 @@ public interface UserDTOMapper {
 
     UpdateUserDTO toUpdateUserDTO(User user);
 
-    User toUser(UpdateUserDTO updateUserDTO);
+    User updateUserDTOtoUser(UpdateUserDTO updateUserDTO);
 
 }

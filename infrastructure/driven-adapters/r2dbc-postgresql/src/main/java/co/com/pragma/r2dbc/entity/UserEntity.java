@@ -19,13 +19,11 @@ public class UserEntity {
     private Long id;
     private String name;
 
-    @Column("snake_case")
     private String lastName;
     private String document;
     private String phone;
     private String email;
 
-    @Column("snake_case")
     private Integer baseSalary;
 
 }
