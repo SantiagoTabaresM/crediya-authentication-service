@@ -11,6 +11,12 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder(toBuilder = true)
 public class User {
-
+    private Long id;
+    private String name;
+    private String lastName;
+    private String document;
+    private String phone;
+    private String email;
+    private Integer baseSalary;
 
 }
