@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.Date;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -14,9 +16,12 @@ public class User {
     private Long id;
     private String name;
     private String lastName;
+    private Date birthDate;
+    private String address;
     private String document;
     private String phone;
     private String email;
     private Integer baseSalary;
+
 
 }
