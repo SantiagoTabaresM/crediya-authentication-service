@@ -13,7 +13,7 @@ import reactor.core.publisher.Mono;
 public class UserRepositoryAdapter extends ReactiveAdapterOperations<
         User/* change for domain model */,
         UserEntity/* change for adapter model */,
-        String,
+        Long,
         UserReactiveRepository
 > implements UserRepository {
     public UserRepositoryAdapter(UserReactiveRepository repository, ObjectMapper mapper) {
@@ -29,14 +29,20 @@ public class UserRepositoryAdapter extends ReactiveAdapterOperations<
         return super.findAll();
     }
 
+
     @Override
-    public Mono<User> findById(String id) {
+    public Mono<User> findById(Long id) {
         return super.findById(id);
     }
 
     @Override
-    public Mono<Void> deleteById(String id) {
+    public Mono<Void> deleteById(Long id) {
         return repository.deleteById(id);
+    }
+
+    @Override
+    public Mono<Boolean> existsByEmail(String email) {
+        return repository.existsByEmail(email);
     }
 
 }

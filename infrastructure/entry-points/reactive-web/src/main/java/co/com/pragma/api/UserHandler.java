@@ -3,7 +3,9 @@ package co.com.pragma.api;
 import co.com.pragma.api.dto.CreateUserDTO;
 import co.com.pragma.api.dto.UpdateUserDTO;
 import co.com.pragma.api.dto.UserDTO;
+import co.com.pragma.api.exception.ValidationException;
 import co.com.pragma.api.mapper.UserDTOMapper;
+import co.com.pragma.api.validation.ReactiveValidator;
 import co.com.pragma.api.validation.UserValidator;
 import co.com.pragma.usecase.user.UserUseCase;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -13,6 +15,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
+
+import java.util.Map;
 
 
 @Component
@@ -30,6 +34,16 @@ public class UserHandler {
 
         return userMono
                 .flatMap(userValidator::validateCreateUser)
+                .flatMap(dto -> userUseCase.existsByEmail(dto.email())
+                        .flatMap(exists -> {
+                            if (exists) {
+                                Map<String, String> errors = ReactiveValidator.createErrorMap();
+                                errors.put("correo_electronico", "El correo electrónico ya está registrado por otro solicitante");
+                                return Mono.error(new ValidationException("Errores de validación", errors));
+                            }
+                            return Mono.just(dto);
+                        })
+                )
                 .map(userDTOMapper::toUser)
                 .flatMap(userUseCase::saveUser)
                 .map(userDTOMapper::toUserDTO)
@@ -63,7 +77,7 @@ public class UserHandler {
     }
 
     public Mono<ServerResponse> listenGetUserById(ServerRequest serverRequest) {
-        String id = serverRequest.pathVariable("id");
+        Long id = Long.valueOf(serverRequest.pathVariable("id"));
 
         return userUseCase.getUserById(id)
                 .map(userDTOMapper::toUserDTO) // convertir a DTO
@@ -75,7 +89,7 @@ public class UserHandler {
 
 
     public Mono<ServerResponse> listenDeleteUser(ServerRequest serverRequest) {
-        String id = serverRequest.pathVariable("id");
+        Long id = Long.valueOf(serverRequest.pathVariable("id"));
 
         return userUseCase.deleteUser(id)
                 .then(ServerResponse.noContent().build());

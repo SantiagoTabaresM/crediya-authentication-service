@@ -23,12 +23,15 @@ public class UserUseCase {
         return userRepository.findAll();
     }
 
-    public Mono<User> getUserById(String id) {
+    public Mono<User> getUserById(Long id) {
         return userRepository.findById(id);
     }
 
-    public Mono<Void> deleteUser(String id) {
+    public Mono<Void> deleteUser(Long id) {
         return userRepository.deleteById(id);
+    }
+    public Mono<Boolean> existsByEmail(String email) {
+        return userRepository.existsByEmail(email);
     }
     
 }
