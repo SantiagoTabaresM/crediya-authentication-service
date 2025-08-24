@@ -4,8 +4,8 @@ import co.com.pragma.api.dto.CreateUserDTO;
 import co.com.pragma.api.dto.UpdateUserDTO;
 import co.com.pragma.api.dto.UserDTO;
 import co.com.pragma.api.mapper.UserDTOMapper;
-import co.com.pragma.model.user.User;
 import co.com.pragma.usecase.user.UserUseCase;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -17,6 +17,7 @@ import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
+@Tag(name = "User API", description = "Reactive User Management")
 public class UserHandler {
 
     private final UserUseCase userUseCase;

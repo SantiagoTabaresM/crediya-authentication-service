@@ -44,3 +44,9 @@ adapters:
       schema: "public"
       username: "postgres"
       password: "R!v3r$2025_Cloud"
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
