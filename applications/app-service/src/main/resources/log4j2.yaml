@@ -1,0 +1,35 @@
+Configuration:
+  status: warn
+  name: YAMLConfig
+
+  Properties:
+    Property:
+      - name: LOG_PATTERN
+        value: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%X{traceId}] [%t] %-5level %logger{36} - %msg%n"
+
+  Appenders:
+    Console:
+      - name: Console
+        target: SYSTEM_OUT
+        PatternLayout:
+          pattern: ${LOG_PATTERN}
+
+    Async:
+      - name: AsyncConsole
+        bufferSize: 1024
+        blocking: false
+        AppenderRef:
+          ref: Console
+
+  Loggers:
+    Root:
+      level: info
+      AppenderRef:
+        - ref: AsyncConsole
+
+    Logger:
+      - name: co.com.pragma
+        level: debug
+        additivity: false
+        AppenderRef:
+          - ref: AsyncConsole

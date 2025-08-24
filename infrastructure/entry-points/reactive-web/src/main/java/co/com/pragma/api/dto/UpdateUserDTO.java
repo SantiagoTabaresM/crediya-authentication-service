@@ -1,13 +1,14 @@
 package co.com.pragma.api.dto;
 
-import java.util.Date;
+import java.time.LocalDate;
+
 
 public record UpdateUserDTO(
         Long id,
         String name,
         String lastName,
         String document,
-        Date birthDate,
+        LocalDate birthDate,
         String address,
         String phone,
         String email,

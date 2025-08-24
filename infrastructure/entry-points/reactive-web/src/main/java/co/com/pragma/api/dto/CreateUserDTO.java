@@ -1,12 +1,12 @@
 package co.com.pragma.api.dto;
 
 
-import java.util.Date;
+import java.time.LocalDate;
 
 public record CreateUserDTO(
         String name,
         String lastName,
-        Date birthDate,
+        LocalDate birthDate,
         String address,
         String document,
         String phone,

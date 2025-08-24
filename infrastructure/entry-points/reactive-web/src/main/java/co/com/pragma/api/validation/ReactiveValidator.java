@@ -1,7 +1,6 @@
 package co.com.pragma.api.validation;
 
 import co.com.pragma.api.exception.ValidationException;
-import co.com.pragma.usecase.user.UserUseCase;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 import java.util.LinkedHashMap;
@@ -15,10 +14,6 @@ public class ReactiveValidator {
     private static final String EMAIL_REGEX = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
     private static final Pattern EMAIL_PATTERN = Pattern.compile(EMAIL_REGEX);
 
-
-    public ReactiveValidator(UserUseCase userUseCase) {
-        this.userUseCase = userUseCase;
-    }
     /**
      * Valida un objeto y retorna un Mono con el objeto si es válido
      */
