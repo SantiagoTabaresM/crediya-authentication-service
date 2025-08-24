@@ -15,10 +15,27 @@ public class GlobalErrorAttributes extends DefaultErrorAttributes {
     public Map<String, Object> getErrorAttributes(ServerRequest request, ErrorAttributeOptions options) {
         Map<String, Object> errorAttributes =  new LinkedHashMap<>();
         Throwable error = getError(request);
-        errorAttributes.put("message",error.getMessage());
+        boolean isControlledError = isControlledError(error);
+
+        if (isControlledError) {
+            // Error controlado: mostrar mensaje específico
+            errorAttributes.put("message", error.getMessage());
+            errorAttributes.put("errorType", error.getClass().getSimpleName());
+        } else {
+            // Error no controlado: mensaje genérico
+            errorAttributes.put("message", "Ocurrió un error inesperado. Por favor, contacte al administrador.");
+            errorAttributes.put("errorType", "InternalServerError");
+        }
+
         errorAttributes.put("path",request.path());
-        errorAttributes.put("error", "Bad Request");
         return errorAttributes;
     }
+
+    private boolean isControlledError(Throwable error) {
+        // Lista de errores considerados como controlados
+        return  error instanceof ValidationException ||
+                error instanceof org.springframework.web.server.ServerWebInputException;
+    }
+
 
 }
