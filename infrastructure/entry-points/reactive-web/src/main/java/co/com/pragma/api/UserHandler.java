@@ -7,6 +7,7 @@ import co.com.pragma.api.exception.ValidationException;
 import co.com.pragma.api.mapper.UserDTOMapper;
 import co.com.pragma.api.validation.ReactiveValidator;
 import co.com.pragma.api.validation.UserValidator;
+import co.com.pragma.usecase.user.IUserUseCase;
 import co.com.pragma.usecase.user.UserUseCase;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +27,7 @@ import java.util.Map;
 @Tag(name = "User API", description = "Reactive User Management")
 public class UserHandler {
 
-    private final UserUseCase userUseCase;
+    private final IUserUseCase userUseCase;
 
     private final UserValidator userValidator;
     private final UserDTOMapper userDTOMapper;

@@ -7,7 +7,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @RequiredArgsConstructor
-public class UserUseCase {
+public class UserUseCase implements IUserUseCase {
 
     private final UserRepository userRepository;
 

@@ -22,7 +22,7 @@ public class ReactiveValidator {
             Map<String, String> errors = validationFunction.apply(object);
 
             if (!errors.isEmpty()) {
-                return Mono.error(new ValidationException("Errores de validación en los campos", errors));
+                return Mono.error(new ValidationException("Validation errors in fields", errors));
             }
 
             return Mono.just(object);
@@ -43,12 +43,12 @@ public class ReactiveValidator {
      */
     public void validateEmail(String email, String fieldName, Map<String, String> errors) {
         if (email == null || email.trim().isEmpty()) {
-            errors.put(fieldName, "El correo electrónico es obligatorio");
+            errors.put(fieldName, "Email is required.");
             return;
         }
 
         if (!EMAIL_PATTERN.matcher(email).matches()) {
-            errors.put(fieldName, "El formato del correo electrónico no es válido");
+            errors.put(fieldName, "The email format is invalid.");
         }
     }
 
@@ -58,7 +58,7 @@ public class ReactiveValidator {
      */
     public void validatePositive(Number value, String fieldName, String errorMessage, Map<String, String> errors) {
         if (value == null) {
-            errors.put(fieldName, "El campo es obligatorio");
+            errors.put(fieldName, "This field is required.");
         } else if (value.doubleValue() <= 0) {
             errors.put(fieldName, errorMessage);
         }
@@ -69,10 +69,10 @@ public class ReactiveValidator {
      */
     public void validateRange(Number value, String fieldName, double min, double max, String errorMessage, Map<String, String> errors) {
         if (value == null) {
-            errors.put(fieldName, "El campo es obligatorio");
+            errors.put(fieldName, "This field is required.");
         } else if (value.doubleValue() < min || value.doubleValue() > max) {
             errors.put(fieldName, errorMessage != null ? errorMessage :
-                    String.format("El valor debe estar entre %.2f y %.2f", min, max));
+                    String.format("The value must be between %.2f and %.2f.", min, max));
         }
     }
 
@@ -92,7 +92,7 @@ public class ReactiveValidator {
         if (value != null) {
             int length = value.trim().length();
             if (length < min || length > max) {
-                errors.put(fieldName, String.format("Debe tener entre %d y %d caracteres", min, max));
+                errors.put(fieldName, String.format("Must be between %d and %d characters s", min, max));
             }
         }
     }
