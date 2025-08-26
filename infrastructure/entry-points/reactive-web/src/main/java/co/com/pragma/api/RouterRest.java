@@ -1,6 +1,6 @@
 package co.com.pragma.api;
 
-import co.com.pragma.api.config.UserPath;
+
 import co.com.pragma.api.dto.CreateUserDTO;
 import co.com.pragma.api.dto.UpdateUserDTO;
 import co.com.pragma.api.dto.UserDTO;
@@ -28,7 +28,6 @@ import static org.springframework.web.reactive.function.server.RouterFunctions.r
 @RequiredArgsConstructor
 public class RouterRest {
 
-    private final UserPath userPath;
     private final UserHandler userHandler;
 
     private static final String USERS = "/api/v1/users";
@@ -127,10 +126,10 @@ public class RouterRest {
             )
     })
     public RouterFunction<ServerResponse> routerFunction(UserHandler handler) {
-        return route(POST(userPath.getUsers()), userHandler::listenSaveUser)
-                .andRoute(PUT(userPath.getUsers()), userHandler::listenUpdateUser)
-                .andRoute(DELETE(userPath.getUsersById()), userHandler::listenDeleteUser)
-                .andRoute(GET(userPath.getUsers()), userHandler::listenGetAllUsers)
-                .andRoute(GET(userPath.getUsersById()), userHandler::listenGetUserById);
+        return route(POST(USERS), userHandler::listenSaveUser)
+                .andRoute(PUT(USERS), userHandler::listenUpdateUser)
+                .andRoute(DELETE(USERS_BY_ID), userHandler::listenDeleteUser)
+                .andRoute(GET(USERS), userHandler::listenGetAllUsers)
+                .andRoute(GET(USERS_BY_ID), userHandler::listenGetUserById);
     }
 }

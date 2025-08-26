@@ -1,5 +1,6 @@
 package co.com.pragma.api.exception;
 
+import co.com.pragma.usecase.user.exception.BussinesException;
 import org.springframework.boot.web.error.ErrorAttributeOptions;
 import org.springframework.boot.web.reactive.error.DefaultErrorAttributes;
 import org.springframework.stereotype.Component;
@@ -33,7 +34,7 @@ public class GlobalErrorAttributes extends DefaultErrorAttributes {
 
     private boolean isControlledError(Throwable error) {
         // Lista de errores considerados como controlados
-        return  error instanceof ValidationException ||
+        return  error instanceof BussinesException ||
                 error instanceof org.springframework.web.server.ServerWebInputException;
     }
 

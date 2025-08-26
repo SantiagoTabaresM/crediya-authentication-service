@@ -5,6 +5,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 // PUERTOS PRIMARIOS
+
 public interface IUserUseCase {
 
     public Mono<User> saveUser(User user);
@@ -17,6 +18,5 @@ public interface IUserUseCase {
 
     public Mono<Void> deleteUser(Long id) ;
 
-    public Mono<Boolean> existsByEmail(String email);
 
 }

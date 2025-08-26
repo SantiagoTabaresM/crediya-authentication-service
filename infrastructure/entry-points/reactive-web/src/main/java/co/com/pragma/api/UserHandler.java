@@ -2,13 +2,11 @@ package co.com.pragma.api;
 
 import co.com.pragma.api.dto.CreateUserDTO;
 import co.com.pragma.api.dto.UpdateUserDTO;
-import co.com.pragma.api.dto.UserDTO;
-import co.com.pragma.api.exception.ValidationException;
+
 import co.com.pragma.api.mapper.UserDTOMapper;
-import co.com.pragma.api.validation.ReactiveValidator;
-import co.com.pragma.api.validation.UserValidator;
+
 import co.com.pragma.usecase.user.IUserUseCase;
-import co.com.pragma.usecase.user.UserUseCase;
+
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -28,25 +26,12 @@ import java.util.Map;
 public class UserHandler {
 
     private final IUserUseCase userUseCase;
-
-    private final UserValidator userValidator;
     private final UserDTOMapper userDTOMapper;
 
     public Mono<ServerResponse> listenSaveUser(ServerRequest serverRequest) {
         log.info("Received request to create new user");
         Mono<CreateUserDTO> userMono = serverRequest.bodyToMono(CreateUserDTO.class);
         return userMono
-                .flatMap(userValidator::validateCreateUser)
-                .flatMap(dto -> userUseCase.existsByEmail(dto.email())
-                        .flatMap(exists -> {
-                            if (Boolean.TRUE.equals(exists)) {
-                                Map<String, String> errors = ReactiveValidator.createErrorMap();
-                                errors.put("email", "The email address is already registered by another user");
-                                return Mono.error(new ValidationException("Validation errors", errors));
-                            }
-                            return Mono.just(dto);
-                        })
-                )
                 .map(userDTOMapper::toUser)
                 .flatMap(userUseCase::saveUser)
                 .map(userDTOMapper::toUserDTO)
@@ -75,6 +60,7 @@ public class UserHandler {
         log.info("Received request to get all users");
         return  userUseCase.getAllUsers()
                 .map(userDTOMapper::toUserDTO)
+                .doOnNext(model-> log.info("Fetched UserDTO : {}", model.id()))
                 .collectList()
                 .flatMap(usersList -> {
                     log.info("Returning {} users", usersList.size());
