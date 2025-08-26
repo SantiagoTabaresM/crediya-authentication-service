@@ -18,5 +18,7 @@ public interface IUserUseCase {
 
     public Mono<Void> deleteUser(Long id) ;
 
+    public Mono<Boolean> existsByDocumentAndEmail(String document, String email);
+
 
 }

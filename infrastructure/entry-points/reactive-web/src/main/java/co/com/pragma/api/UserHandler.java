@@ -17,7 +17,7 @@ import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 
 
-import java.util.Map;
+import java.util.Collections;
 
 @Log4j2
 @Component
@@ -93,6 +93,30 @@ public class UserHandler {
                 .then(ServerResponse.noContent().build())
                 .doOnError(e -> log.error("Error deleting new user", e))
                 .doOnSuccess(resp -> log.info("User deleted successfully"));
+    }
+
+    public Mono<ServerResponse> listenCheckUserExists(ServerRequest serverRequest) {
+        log.info("Received request to check if user exists by name and email");
+
+            // Extraer parámetros de la ruta
+        String document = serverRequest.pathVariable("document");
+        String email = serverRequest.pathVariable("email");
+
+        return userUseCase.existsByDocumentAndEmail(document, email)
+                .flatMap(exists -> {
+                    if (exists) {
+                        log.info("User with document [{}] and email [{}] exists", document, email);
+                        return ServerResponse.ok()
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .bodyValue(true);
+                    } else {
+                        log.info("User with document [{}] and email [{}] does not exist", document, email);
+                        return ServerResponse.ok()
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .bodyValue(false);
+                    }
+                })
+                .doOnError(e -> log.error("Error validating user existence", e));
     }
 
 

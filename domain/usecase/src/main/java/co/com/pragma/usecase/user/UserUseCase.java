@@ -71,7 +71,9 @@ public class UserUseCase implements IUserUseCase {
         return userRepository.deleteById(id);
     }
 
-
+    public Mono<Boolean> existsByDocumentAndEmail(String document, String email) {
+        return userRepository.existsByDocumentAndEmail(document, email);
+    }
 
 
     private Map<String, String> validateCreateUser(User user) {

@@ -32,6 +32,7 @@ public class RouterRest {
 
     private static final String USERS = "/api/v1/users";
     private static final String USERS_BY_ID =  "/api/v1/users/{id}";
+    private static final String USERS_EXISTS = "/api/v1/users/exists/{document}/{email}";
 
     @Bean
     @RouterOperations({
@@ -123,13 +124,33 @@ public class RouterRest {
                                     @ApiResponse(responseCode = "404", description = "User not found")
                             }
                     )
+            ), @RouterOperation(
+            path = USERS_EXISTS,
+            method = {RequestMethod.GET},
+            beanClass = UserHandler.class,
+            beanMethod = "listenCheckUserExists",
+            operation = @Operation(
+                    operationId = "listenCheckUserExists",
+                    summary = "Validate if a user exists by name and email",
+                    parameters = {
+                            @Parameter(name = "document", in = ParameterIn.PATH, required = true, description = "User's document"),
+                            @Parameter(name = "email", in = ParameterIn.PATH, required = true, description = "User's email")
+                    },
+                    responses = {
+                            @ApiResponse(responseCode = "200", description = "Returns whether the user exists or not"),
+                            @ApiResponse(responseCode = "400", description = "Missing required parameters"),
+                            @ApiResponse(responseCode = "500", description = "Internal server error")
+                    }
             )
+    )
+
     })
     public RouterFunction<ServerResponse> routerFunction(UserHandler handler) {
         return route(POST(USERS), userHandler::listenSaveUser)
                 .andRoute(PUT(USERS), userHandler::listenUpdateUser)
                 .andRoute(DELETE(USERS_BY_ID), userHandler::listenDeleteUser)
                 .andRoute(GET(USERS), userHandler::listenGetAllUsers)
-                .andRoute(GET(USERS_BY_ID), userHandler::listenGetUserById);
+                .andRoute(GET(USERS_BY_ID), userHandler::listenGetUserById)
+                .andRoute(GET(USERS_EXISTS), userHandler::listenCheckUserExists);
     }
 }
