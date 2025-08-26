@@ -4,8 +4,7 @@ import co.com.pragma.api.config.UserPath;
 import co.com.pragma.api.dto.UserDTO;
 import co.com.pragma.api.mapper.UserDTOMapper;
 import co.com.pragma.api.mapper.UserDTOMapperImpl;
-import co.com.pragma.api.validation.ReactiveValidator;
-import co.com.pragma.api.validation.UserValidator;
+
 import co.com.pragma.model.user.User;
 import co.com.pragma.usecase.user.IUserUseCase;
 
@@ -32,7 +31,7 @@ import static org.mockito.Mockito.when;
 
 @ContextConfiguration(classes = {RouterRest.class, UserHandler.class})
 @EnableConfigurationProperties(UserPath.class)
-@Import({UserDTOMapperImpl.class, UserValidator.class, ReactiveValidator.class})
+@Import({UserDTOMapperImpl.class})
 @ImportAutoConfiguration(exclude = {ReactiveSecurityAutoConfiguration.class})
 @WebFluxTest
 class RouterRestTest {
@@ -43,14 +42,12 @@ class RouterRestTest {
     @MockitoBean
     private IUserUseCase userUseCase;
 
-    @Autowired
-    private UserValidator userValidator;
 
     @Autowired
     private UserDTOMapper userDTOMapper;
 
 
-    private final String USERS = "/api/v1/users";
+    private static final String USERS = "/api/v1/users";
 
 
     private final User userOne = User.builder()
@@ -116,7 +113,6 @@ class RouterRestTest {
     @Test
     void shouldPostSaveUser() {
            when(userUseCase.saveUser(any(User.class))).thenReturn(Mono.just(userOne));
-           when(userUseCase.existsByEmail(any(String.class))).thenReturn(Mono.just(false));
 
            webTestClient.post()
                 .uri(USERS)
