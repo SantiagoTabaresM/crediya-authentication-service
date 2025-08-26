@@ -17,19 +17,25 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 public class UserUseCase implements IUserUseCase {
 
+    private static final String FIELD_EMAIL = "email";
+    private static final String FIELD_NAME = "name";
+    private static final String FIELD_LAST_NAME = "last_name";
+    private static final String FIELD_BASE_SALARY = "base_salary";
+    private static final String FIELD_ID = "id";
+
     private static final String EMAIL_REGEX = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
     private static final Pattern EMAIL_PATTERN = Pattern.compile(EMAIL_REGEX);
     
     private final UserRepository userRepository;
 
     public Mono<User> saveUser(User user) {
-        return validate(user, this::validateUserFields) // Primero validaciones normales
+        return validate(user, this::validateCreateUser) // Primero validaciones normales
                 .flatMap(validatedUser ->
                         userRepository.existsByEmail(validatedUser.getEmail()) // Luego validar unicidad de email
                                 .flatMap(exists -> {
                                     if (Boolean.TRUE.equals(exists)) {
                                         Map<String, String> errors = createErrorMap();
-                                        errors.put("email", "The email address is already registered by another user");
+                                        errors.put(FIELD_EMAIL, "The email address is already registered by another user");
                                         return Mono.error(new BussinesException("Validation errors", errors));
                                     }
                                     return userRepository.save(validatedUser);
@@ -38,7 +44,19 @@ public class UserUseCase implements IUserUseCase {
     }
 
     public Mono<User> updateUser(User user) {
-        return userRepository.save(user);
+
+        return validate(user, this::validateUpdateUser) // Primero validaciones normales
+                .flatMap(validatedUser ->
+                        userRepository.existsByEmail(validatedUser.getEmail()) // Luego validar unicidad de email
+                                .flatMap(exists -> {
+                                    if (Boolean.TRUE.equals(exists)) {
+                                        Map<String, String> errors = createErrorMap();
+                                        errors.put(FIELD_EMAIL, "The email address is already registered by another user");
+                                        return Mono.error(new BussinesException("Validation errors", errors));
+                                    }
+                                    return userRepository.save(validatedUser);
+                                })
+                );
     }
 
     public Flux<User> getAllUsers() {
@@ -55,7 +73,33 @@ public class UserUseCase implements IUserUseCase {
 
 
 
-    
+
+    private Map<String, String> validateCreateUser(User user) {
+        Map<String, String> errors = createErrorMap();
+        // Validar nombres
+        validateNotBlank(user.getName(), FIELD_NAME,
+                "Name is required", errors);
+        validateLength(user.getName(), FIELD_NAME, 2, 50, errors);
+
+        // Validar apellidos
+        validateNotBlank(user.getLastName(), FIELD_LAST_NAME,
+                "Last name is required", errors);
+        validateLength(user.getLastName(), FIELD_LAST_NAME, 2, 50, errors);
+
+        // Validar email
+        validateEmail(user.getEmail(), FIELD_EMAIL, errors);
+
+        // Validar salario
+        validateRange(user.getBaseSalary(), FIELD_BASE_SALARY, 0, 15000000,
+                "Base salary must be greater than 0 and less than 15,000,000", errors);
+
+        return errors;
+    }
+
+    private Map<String, String> validateUpdateUser(User user) {
+        return validateCreateUser(user);
+    }
+
     
 
     /**
@@ -98,17 +142,6 @@ public class UserUseCase implements IUserUseCase {
 
 
     /**
-     * Valida que un número sea positivo
-     */
-    public void validatePositive(Number value, String fieldName, String errorMessage, Map<String, String> errors) {
-        if (value == null) {
-            errors.put(fieldName, "This field is required");
-        } else if (value.doubleValue() <= 0) {
-            errors.put(fieldName, errorMessage);
-        }
-    }
-
-    /**
      * Valida que un número esté dentro de un rango [min, max]
      */
     public void validateRange(Number value, String fieldName, double min, double max, String errorMessage, Map<String, String> errors) {
@@ -120,14 +153,6 @@ public class UserUseCase implements IUserUseCase {
         }
     }
 
-    /**
-     * Valida que un número no sea nulo
-     */
-    public void validateNotNull(Object value, String fieldName, String errorMessage, Map<String, String> errors) {
-        if (value == null) {
-            errors.put(fieldName, errorMessage);
-        }
-    }
 
     /**
      * Valida la longitud de un string
@@ -149,27 +174,7 @@ public class UserUseCase implements IUserUseCase {
     }
     
     
-    
-    private Map<String, String> validateUserFields(User user) {
-        Map<String, String> errors = createErrorMap();
-        // Validar nombres
-        validateNotBlank(user.getName(), "name",
-                "Name is required", errors);
-        validateLength(user.getName(), "name", 2, 50, errors);
 
-        // Validar apellidos
-        validateNotBlank(user.getLastName(), "last_name",
-                "Last name is required", errors);
-        validateLength(user.getLastName(), "last_name", 2, 50, errors);
 
-        // Validar email
-        validateEmail(user.getEmail(), "email", errors);
-
-        // Validar salario
-        validateRange(user.getBaseSalary(), "base_salary", 0, 15000000,
-                "Base salary must be greater than 0 and less than 15,000,000", errors);
-
-        return errors;
-    }
     
 }
