@@ -57,7 +57,7 @@ public class UserHandler {
 
 
     public Mono<ServerResponse> listenGetAllUsers(ServerRequest serverRequest) {
-        log.info("Received request to get all users");
+        log.info("Received request [{}] to get all users", serverRequest.path());
         return  userUseCase.getAllUsers()
                 .map(userDTOMapper::toUserDTO)
                 .doOnNext(model-> log.info("Fetched UserDTO : {}", model.id()))
@@ -104,7 +104,7 @@ public class UserHandler {
 
         return userUseCase.existsByDocumentAndEmail(document, email)
                 .flatMap(exists -> {
-                    if (exists) {
+                    if (Boolean.TRUE.equals(exists)) {
                         log.info("User with document [{}] and email [{}] exists", document, email);
                         return ServerResponse.ok()
                                 .contentType(MediaType.APPLICATION_JSON)

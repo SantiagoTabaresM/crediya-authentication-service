@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class BussinesException extends RuntimeException {
-    private final Map<String, Object> errorDetails;
+    private final transient Map<String, Object> errorDetails;
 
     public BussinesException(String message, Map<String, String> fieldErrors) {
         super(buildErrorMessage(message, fieldErrors)); // fieldErrors en el message
