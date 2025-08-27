@@ -1,21 +1,28 @@
 package co.com.pragma.r2dbc.config;
 
-import io.r2dbc.spi.ConnectionFactory;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.r2dbc.connection.R2dbcTransactionManager;
+import co.com.pragma.model.utils.gateways.TxOperational;
 
-import org.springframework.transaction.ReactiveTransactionManager;
-import org.springframework.transaction.annotation.EnableTransactionManagement;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.reactive.TransactionalOperator;
+import reactor.core.publisher.Mono;
+
+import java.util.function.Supplier;
+
+@Component
+public class TransactionalOperatorR2dbcAdapter implements TxOperational {
+
+    private final TransactionalOperator transactionalOperator;
+
+    public TransactionalOperatorR2dbcAdapter(TransactionalOperator transactionalOperator) {
+        this.transactionalOperator = transactionalOperator;
+    }
 
 
-@Configuration
-@EnableTransactionManagement
-public class ReactiveTransactionConfig {
-
-    @Bean
-      public ReactiveTransactionManager transactionManager(ConnectionFactory connectionFactory) {
-          return new R2dbcTransactionManager(connectionFactory);
-      }
-
+    @Override
+    public <T> Mono<T> execute(Supplier<Mono<T>> action) {
+        // Delegamos la ejecución al TransactionalOperator de Spring
+        return action.get().as(transactionalOperator::transactional);
+    }
 }
+
+

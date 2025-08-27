@@ -2,11 +2,14 @@ package co.com.pragma.usecase.user;
 
 import co.com.pragma.model.user.User;
 import co.com.pragma.model.user.gateways.UserRepository;
+import co.com.pragma.model.utils.gateways.Logger;
+import co.com.pragma.model.utils.gateways.TxOperational;
 import co.com.pragma.usecase.user.exception.BussinesException;
 
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -16,6 +19,7 @@ import java.util.regex.Pattern;
 
 @RequiredArgsConstructor
 public class UserUseCase implements IUserUseCase {
+
 
     private static final String FIELD_EMAIL = "email";
     private static final String FIELD_NAME = "name";
@@ -27,52 +31,87 @@ public class UserUseCase implements IUserUseCase {
     private static final Pattern EMAIL_PATTERN = Pattern.compile(EMAIL_REGEX);
     
     private final UserRepository userRepository;
+    private final Logger logger;
+    private final TxOperational txOperational;
+
+
 
     public Mono<User> saveUser(User user) {
-        return validate(user, this::validateCreateUser) // Primero validaciones normales
-                .flatMap(validatedUser ->
-                        userRepository.existsByEmail(validatedUser.getEmail()) // Luego validar unicidad de email
-                                .flatMap(exists -> {
-                                    if (Boolean.TRUE.equals(exists)) {
-                                        Map<String, String> errors = createErrorMap();
-                                        errors.put(FIELD_EMAIL, "The email address is already registered by another user");
-                                        return Mono.error(new BussinesException("Validation errors", errors));
-                                    }
-                                    return userRepository.save(validatedUser);
-                                })
-                );
+        return txOperational.execute(() -> {
+            logger.info("Attempting to save user with email: " + user.getEmail());
+            return validate(user, this::validateCreateUser)
+                    .flatMap(validatedUser ->
+                            userRepository.existsByEmail(validatedUser.getEmail())
+                                    .flatMap(exists -> {
+                                        if (Boolean.TRUE.equals(exists)) {
+                                            logger.error("Email already exists: " + validatedUser.getEmail(), null);
+                                            Map<String, String> errors = createErrorMap();
+                                            errors.put(FIELD_EMAIL, "The email address is already registered by another user");
+                                            return Mono.error(new BussinesException("Validation errors", errors));
+                                        }
+                                        return userRepository.save(validatedUser)
+                                                .doOnSuccess(saved -> logger.info("User saved successfully with id: " + saved.getId()));
+                                    })
+                    );
+        });
     }
 
     public Mono<User> updateUser(User user) {
-
-        return validate(user, this::validateUpdateUser) // Primero validaciones normales
-                .flatMap(validatedUser ->
-                        userRepository.existsByEmail(validatedUser.getEmail()) // Luego validar unicidad de email
-                                .flatMap(exists -> {
-                                    if (Boolean.TRUE.equals(exists)) {
-                                        Map<String, String> errors = createErrorMap();
-                                        errors.put(FIELD_EMAIL, "The email address is already registered by another user");
-                                        return Mono.error(new BussinesException("Validation errors", errors));
-                                    }
-                                    return userRepository.save(validatedUser);
-                                })
-                );
+        return txOperational.execute(() -> {
+            logger.info("Attempting to update user with id: " + user.getId());
+            return validate(user, this::validateUpdateUser)
+                    .doOnError(e -> logger.error("Validation failed for user with id: " + user.getId(), e))
+                    .flatMap(validatedUser ->
+                            userRepository.existsByEmail(validatedUser.getEmail())
+                                    .flatMap(exists -> {
+                                        if (Boolean.TRUE.equals(exists)) {
+                                            logger.error("Email already exists: " + validatedUser.getEmail(), null);
+                                            Map<String, String> errors = createErrorMap();
+                                            errors.put(FIELD_EMAIL, "The email address is already registered by another user");
+                                            return Mono.error(new BussinesException("Validation errors", errors));
+                                        }
+                                        return userRepository.save(validatedUser)
+                                                .doOnSuccess(updated -> logger.info("User updated successfully with id: " + updated.getId()));
+                                    })
+                    );
+        });
     }
 
+
     public Flux<User> getAllUsers() {
-        return userRepository.findAll();
+        logger.info("Fetching all users");
+        return userRepository.findAll()
+                .doOnComplete(() -> logger.info("Finished fetching all users"));
     }
 
     public Mono<User> getUserById(Long id) {
-        return userRepository.findById(id);
+        logger.info("Fetching user by id: " + id);
+        return userRepository.findById(id)
+                .doOnSuccess(user -> {
+                    if (user != null) {
+                        logger.info("User found with id: " + id);
+                    } else {
+                        logger.info("No user found with id: " + id);
+                    }
+                });
     }
 
     public Mono<Void> deleteUser(Long id) {
-        return userRepository.deleteById(id);
+        logger.info("Deleting user with id: " + id);
+        return userRepository.deleteById(id)
+                .doOnSuccess(unused -> logger.info("User deleted successfully with id: " + id));
     }
 
     public Mono<Boolean> existsByDocumentAndEmail(String document, String email) {
-        return userRepository.existsByDocumentAndEmail(document, email);
+        logger.info("Checking if user exists with document: " + document + "  email: " + email);
+        return userRepository.existsByDocumentAndEmail(document, email)
+                .doOnSuccess(exists -> {
+                    if (Boolean.TRUE.equals(exists)) {
+                        logger.info("User already exists with document: " + document + "  email: " + email);
+                    } else {
+                        logger.info("No user exists with document: " + document + " and email: " + email);
+                    }
+                });
     }
 
 
@@ -175,8 +214,5 @@ public class UserUseCase implements IUserUseCase {
         return new LinkedHashMap<>();
     }
     
-    
 
-
-    
 }

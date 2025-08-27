@@ -2,6 +2,8 @@ package co.com.pragma.usecase.user;
 
 import co.com.pragma.model.user.User;
 import co.com.pragma.model.user.gateways.UserRepository;
+import co.com.pragma.model.utils.gateways.Logger;
+import co.com.pragma.model.utils.gateways.TxOperational;
 import co.com.pragma.usecase.user.exception.BussinesException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,6 +16,7 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.util.Map;
+import java.util.function.Supplier;
 
 import static org.mockito.Mockito.*;
 
@@ -22,6 +25,12 @@ class UserUseCaseTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private Logger logger;
+
+    @Mock
+    private TxOperational txOperational;
 
     @InjectMocks
     private UserUseCase userUseCase;
@@ -45,6 +54,9 @@ class UserUseCaseTest {
                 .email("invalid-email") // Email inválido
                 .baseSalary(-1000) // Salario negativo
                 .build();
+
+
+
     }
 
 
@@ -55,6 +67,10 @@ class UserUseCaseTest {
     void testSaveUser_WithValidUser_ShouldSaveSuccessfully() {
         when(userRepository.existsByEmail(validUser.getEmail())).thenReturn(Mono.just(false));
         when(userRepository.save(validUser)).thenReturn(Mono.just(validUser));
+        when(txOperational.execute(any())).thenAnswer(invocation -> {
+            // Ejecuta el supplier pasado
+            return ((Supplier<Mono<User>>) invocation.getArgument(0)).get();
+        });
 
         StepVerifier.create(userUseCase.saveUser(validUser))
                 .expectNext(validUser)
@@ -63,6 +79,10 @@ class UserUseCaseTest {
 
     @Test
     void validateCreateUser_shouldFail_whenInvalidUser() {
+        when(txOperational.execute(any())).thenAnswer(invocation -> {
+            // Ejecuta el supplier pasado
+            return ((Supplier<Mono<User>>) invocation.getArgument(0)).get();
+        });
         // when & then
         StepVerifier.create(userUseCase.saveUser(invalidUser))
                 .expectErrorSatisfies(error -> {
@@ -84,7 +104,10 @@ class UserUseCaseTest {
 
     @Test
     void saveUser_shouldThrowBussinesException_whenEmailAlreadyExists() {
-
+        when(txOperational.execute(any())).thenAnswer(invocation -> {
+            // Ejecuta el supplier pasado
+            return ((Supplier<Mono<User>>) invocation.getArgument(0)).get();
+        });
         // Simular que el email ya existe
         when(userRepository.existsByEmail(validUser.getEmail())).thenReturn(Mono.just(true));
 
@@ -114,6 +137,10 @@ class UserUseCaseTest {
 
     @Test
     void testUpdateUser_WithValidUser_ShouldUpdateSuccessfully() {
+        when(txOperational.execute(any())).thenAnswer(invocation -> {
+            // Ejecuta el supplier pasado
+            return ((Supplier<Mono<User>>) invocation.getArgument(0)).get();
+        });
         when(userRepository.existsByEmail(validUser.getEmail())).thenReturn(Mono.just(false));
         when(userRepository.save(validUser)).thenReturn(Mono.just(validUser));
 
@@ -124,6 +151,10 @@ class UserUseCaseTest {
 
     @Test
     void validateUpdateUser_shouldFail_whenInvalidUser() {
+        when(txOperational.execute(any())).thenAnswer(invocation -> {
+            // Ejecuta el supplier pasado
+            return ((Supplier<Mono<User>>) invocation.getArgument(0)).get();
+        });
         // when & then
         StepVerifier.create(userUseCase.updateUser(invalidUser))
                 .expectErrorSatisfies(error -> {
@@ -145,6 +176,10 @@ class UserUseCaseTest {
 
     @Test
     void updateUser_shouldThrowBussinesException_whenEmailAlreadyExists() {
+        when(txOperational.execute(any())).thenAnswer(invocation -> {
+            // Ejecuta el supplier pasado
+            return ((Supplier<Mono<User>>) invocation.getArgument(0)).get();
+        });
         // Simular que el email ya existe
         when(userRepository.existsByEmail(validUser.getEmail())).thenReturn(Mono.just(true));
 
