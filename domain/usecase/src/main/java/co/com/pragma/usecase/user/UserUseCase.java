@@ -16,7 +16,12 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
-
+/**
+ * Clase `UserUseCase` que implementa la interfaz `IUserUseCase`.
+ * Esta clase contiene la lógica de negocio relacionada con los usuarios.
+ * Utiliza inyección de dependencias para acceder al repositorio de usuarios,
+ * el logger y las operaciones transaccionales.
+ */
 @RequiredArgsConstructor
 public class UserUseCase implements IUserUseCase {
 
@@ -36,6 +41,12 @@ public class UserUseCase implements IUserUseCase {
 
 
 
+    /**
+     * Guarda un usuario en la base de datos.
+     *
+     * @param user El usuario a guardar.
+     * @return Un `Mono` que emite el usuario guardado o un error si ocurre algún problema.
+     */
     public Mono<User> saveUser(User user) {
         return txOperational.execute(() -> {
             logger.info("Attempting to save user with email: " + user.getEmail());
@@ -56,6 +67,12 @@ public class UserUseCase implements IUserUseCase {
         });
     }
 
+    /**
+     * Actualiza un usuario existente en la base de datos.
+     *
+     * @param user El usuario a actualizar.
+     * @return Un `Mono` que emite el usuario actualizado o un error si ocurre algún problema.
+     */
     public Mono<User> updateUser(User user) {
         return txOperational.execute(() -> {
             logger.info("Attempting to update user with id: " + user.getId());
@@ -77,13 +94,22 @@ public class UserUseCase implements IUserUseCase {
         });
     }
 
-
+    /**
+     * Obtiene todos los usuarios de la base de datos.
+     *
+     * @return Un `Flux` que emite los usuarios encontrados.
+     */
     public Flux<User> getAllUsers() {
         logger.info("Fetching all users");
         return userRepository.findAll()
                 .doOnComplete(() -> logger.info("Finished fetching all users"));
     }
 
+    /**
+     * Obtiene todos los usuarios de la base de datos.
+     *
+     * @return Un `Flux` que emite los usuarios encontrados.
+     */
     public Mono<User> getUserById(Long id) {
         logger.info("Fetching user by id: " + id);
         return userRepository.findById(id)
@@ -96,6 +122,12 @@ public class UserUseCase implements IUserUseCase {
                 });
     }
 
+    /**
+     * Elimina un usuario por su ID.
+     *
+     * @param id El ID del usuario a eliminar.
+     * @return Un `Mono` que completa cuando el usuario ha sido eliminado.
+     */
     public Mono<Void> deleteUser(Long id) {
         logger.info("Deleting user with id: " + id);
         return userRepository.deleteById(id)
