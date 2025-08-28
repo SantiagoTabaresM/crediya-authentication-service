@@ -1,0 +1,23 @@
+package co.com.pragma.model.user.gateways;
+
+import co.com.pragma.model.user.User;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+// PUERTOS SECUNDARIOS
+public interface UserRepository {
+
+    Mono<User> save(User user);
+
+    Flux<User> findAll();
+
+    Mono<User> findById(Long id);
+
+    Mono<Void> deleteById(Long id);
+
+    Mono<Boolean> existsByEmail(String email);
+
+    Mono<Boolean> existsByDocumentAndEmail(String document, String email);
+
+
+}
