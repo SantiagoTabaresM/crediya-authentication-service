@@ -3,6 +3,7 @@ package co.com.pragma.usecase.user;
 import co.com.pragma.model.user.User;
 import co.com.pragma.model.user.gateways.UserRepository;
 import co.com.pragma.model.utils.gateways.Logger;
+import co.com.pragma.model.utils.gateways.PasswordEncoderPort;
 import co.com.pragma.model.utils.gateways.TxOperational;
 import co.com.pragma.usecase.user.exception.BussinesException;
 
@@ -38,6 +39,7 @@ public class UserUseCase implements IUserUseCase {
     private final UserRepository userRepository;
     private final Logger logger;
     private final TxOperational txOperational;
+    private final PasswordEncoderPort passwordEncoder;
 
 
 
@@ -51,21 +53,48 @@ public class UserUseCase implements IUserUseCase {
         return txOperational.execute(() -> {
             logger.info("Attempting to save user with email: " + user.getEmail());
             return validate(user, this::validateCreateUser)
-                    .flatMap(validatedUser ->
-                            userRepository.existsByEmail(validatedUser.getEmail())
-                                    .flatMap(exists -> {
-                                        if (Boolean.TRUE.equals(exists)) {
-                                            logger.error("Email already exists: " + validatedUser.getEmail(), null);
-                                            Map<String, String> errors = createErrorMap();
-                                            errors.put(FIELD_EMAIL, "The email address is already registered by another user");
-                                            return Mono.error(new BussinesException("Validation errors", errors));
-                                        }
-                                        return userRepository.save(validatedUser)
-                                                .doOnSuccess(saved -> logger.info("User saved successfully with id: " + saved.getId()));
-                                    })
-                    );
+                    .flatMap(this::checkIfEmailExists)
+                    .flatMap(this::encryptPassword)
+                    .map(u -> {
+                        u.setRoleId(3);
+                        return u;
+                    })
+                    .flatMap(userRepository::save)
+                    .doOnSuccess(saved -> logger.info("User saved successfully with id: " + saved.getId()));
         });
     }
+
+    /**
+     * Verifica si el correo ya existe en la BD.
+     */
+    private Mono<User> checkIfEmailExists(User user) {
+        return userRepository.existsByEmail(user.getEmail())
+                .flatMap(exists -> {
+                    if (Boolean.TRUE.equals(exists)) {
+                        logger.error("Email already exists: " + user.getEmail(), null);
+                        Map<String, String> errors = createErrorMap();
+                        errors.put(FIELD_EMAIL, "The email address is already registered by another user");
+                        return Mono.error(new BussinesException("Validation errors", errors));
+                    }
+                    return Mono.just(user);
+                });
+    }
+
+    /**
+     * Encripta la contraseña del usuario.
+     */
+    private Mono<User> encryptPassword(User user) {
+        return passwordEncoder.encode(user.getPassword()) // devuelve Mono<String>
+                .map(encodedPassword ->
+                        user.toBuilder()
+                                .password(encodedPassword) // aquí sí es un String
+                                .build()
+                );
+    }
+
+
+
+
 
     /**
      * Actualiza un usuario existente en la base de datos.

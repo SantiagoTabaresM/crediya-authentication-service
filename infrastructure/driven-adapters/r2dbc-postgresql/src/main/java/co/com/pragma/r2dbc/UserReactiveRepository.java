@@ -14,4 +14,6 @@ public interface UserReactiveRepository extends ReactiveCrudRepository<UserEntit
     @Transactional
     Mono<Boolean> existsByDocumentAndEmail(String document, String email);
 
+    Mono<UserEntity> findByEmail(String email);
+
 }

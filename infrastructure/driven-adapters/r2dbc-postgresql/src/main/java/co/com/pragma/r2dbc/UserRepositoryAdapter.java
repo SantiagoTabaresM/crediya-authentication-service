@@ -41,6 +41,12 @@ public class UserRepositoryAdapter extends ReactiveAdapterOperations<
 
     @Override
     @Transactional
+    public Mono<User> findByEmail(String email) {
+        return repository.findByEmail(email).map(this::toEntity);
+    }
+
+    @Override
+    @Transactional
     public Mono<Void> deleteById(Long id) {
         return repository.deleteById(id);
     }

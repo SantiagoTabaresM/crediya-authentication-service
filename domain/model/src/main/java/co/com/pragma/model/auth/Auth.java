@@ -1,4 +1,4 @@
-package co.com.pragma.model.role;
+package co.com.pragma.model.auth;
 import lombok.*;
 //import lombok.NoArgsConstructor;
 
@@ -8,9 +8,9 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder(toBuilder = true)
-public class Role {
+public class Auth {
+    private Integer userId;
+    private String email;
+    private String password;
     private Integer roleId;
-    private String name;
-    private String description;
-
 }
