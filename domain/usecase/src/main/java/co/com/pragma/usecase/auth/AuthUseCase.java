@@ -26,6 +26,9 @@ public class AuthUseCase implements IAuthUseCase{
     private static final String EMAIL_REGEX = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
     private static final Pattern EMAIL_PATTERN = Pattern.compile(EMAIL_REGEX);
 
+    private static final String ERROR_VALIDATION = "Validation errors";
+
+
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
 
@@ -83,7 +86,7 @@ public class AuthUseCase implements IAuthUseCase{
                     logger.error("Role not found with email: " + user.getRoleId(), null);
                     Map<String, String> errors = createErrorMap();
                     errors.put("Role", "Role not found with email: " + user.getRoleId());
-                    return Mono.error(new BussinesException("Validation errors", errors));
+                    return Mono.error(new BussinesException(ERROR_VALIDATION, errors));
                 }));
     }
 
@@ -103,7 +106,7 @@ public class AuthUseCase implements IAuthUseCase{
                                         logger.error("The password is incorrect to " + user.getEmail(), null);
                                         Map<String, String> errors = createErrorMap();
                                         errors.put(FIELD_PASSWORD, "The password is incorrect");
-                                        return Mono.error(new BussinesException("Validation errors", errors));
+                                        return Mono.error(new BussinesException(ERROR_VALIDATION, errors));
                                     }
                                 })
                 )
@@ -111,7 +114,7 @@ public class AuthUseCase implements IAuthUseCase{
                     logger.error("User not found with email: " + user.getEmail(), null);
                     Map<String, String> errors = createErrorMap();
                     errors.put(FIELD_EMAIL, "User not found with email: " + user.getEmail());
-                    return Mono.error(new BussinesException("Validation errors", errors));
+                    return Mono.error(new BussinesException(ERROR_VALIDATION, errors));
                 }));
     }
 

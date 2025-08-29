@@ -4,6 +4,7 @@ import co.com.pragma.model.user.User;
 import co.com.pragma.model.user.gateways.UserRepository;
 import co.com.pragma.model.utils.gateways.Logger;
 import co.com.pragma.model.utils.gateways.PasswordEncoderPort;
+import co.com.pragma.model.utils.gateways.SecurityUtilsPort;
 import co.com.pragma.model.utils.gateways.TxOperational;
 import co.com.pragma.usecase.user.exception.BussinesException;
 
@@ -31,7 +32,7 @@ public class UserUseCase implements IUserUseCase {
     private static final String FIELD_NAME = "name";
     private static final String FIELD_LAST_NAME = "last_name";
     private static final String FIELD_BASE_SALARY = "base_salary";
-    private static final String FIELD_ID = "id";
+    private static final String ERROR_VALIDATION = "Validation errors";
 
     private static final String EMAIL_REGEX = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
     private static final Pattern EMAIL_PATTERN = Pattern.compile(EMAIL_REGEX);
@@ -40,6 +41,7 @@ public class UserUseCase implements IUserUseCase {
     private final Logger logger;
     private final TxOperational txOperational;
     private final PasswordEncoderPort passwordEncoder;
+    private final SecurityUtilsPort securityUtils;
 
 
 
@@ -54,6 +56,7 @@ public class UserUseCase implements IUserUseCase {
             logger.info("Attempting to save user with email: " + user.getEmail());
             return validate(user, this::validateCreateUser)
                     .flatMap(this::checkIfEmailExists)
+                    .flatMap(this::validateRoleToCreate)
                     .flatMap(this::encryptPassword)
                     .map(u -> {
                         u.setRoleId(3);
@@ -74,12 +77,26 @@ public class UserUseCase implements IUserUseCase {
                         logger.error("Email already exists: " + user.getEmail(), null);
                         Map<String, String> errors = createErrorMap();
                         errors.put(FIELD_EMAIL, "The email address is already registered by another user");
-                        return Mono.error(new BussinesException("Validation errors", errors));
+                        return Mono.error(new BussinesException(ERROR_VALIDATION, errors));
                     }
                     return Mono.just(user);
                 });
     }
 
+    private Mono<User> validateRoleToCreate(User user) {
+        return securityUtils.getUserRole()
+                .flatMap(role -> {
+                    logger.info("The role of the user creating the new user is: " + role);
+                    // Permitir tanto ADMIN como ADVISOR
+                    if (!role.equals("ADMIN") && !role.equals("ADVISOR")) {
+                        logger.error("Only ADMIN or ADVISOR users can create new users", null);
+                        Map<String, String> errors = createErrorMap();
+                        errors.put("Permission", "Only ADMIN or ADVISOR users can create new users");
+                        return Mono.error(new BussinesException(ERROR_VALIDATION, errors));
+                    }
+                    return Mono.just(user);
+                });
+    }
     /**
      * Encripta la contraseña del usuario.
      */
@@ -114,7 +131,7 @@ public class UserUseCase implements IUserUseCase {
                                             logger.error("Email already exists: " + validatedUser.getEmail(), null);
                                             Map<String, String> errors = createErrorMap();
                                             errors.put(FIELD_EMAIL, "The email address is already registered by another user");
-                                            return Mono.error(new BussinesException("Validation errors", errors));
+                                            return Mono.error(new BussinesException(ERROR_VALIDATION , errors));
                                         }
                                         return userRepository.save(validatedUser)
                                                 .doOnSuccess(updated -> logger.info("User updated successfully with id: " + updated.getId()));

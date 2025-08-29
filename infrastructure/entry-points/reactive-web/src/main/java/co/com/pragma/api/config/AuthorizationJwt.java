@@ -1,7 +1,6 @@
 package co.com.pragma.api.config;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,9 +10,9 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
+
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.jwt.JwtClaimValidator;
+
 import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder;
 import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
@@ -23,11 +22,10 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.web.reactive.config.WebFluxConfigurer;
 import reactor.core.publisher.Mono;
 
-import java.io.IOException;
+
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import lombok.extern.log4j.Log4j2;
 
 import javax.crypto.SecretKey;
@@ -42,17 +40,12 @@ public class AuthorizationJwt implements WebFluxConfigurer {
     private final String secretKey;
     private final String jsonExpRoles;
 
-    private final ObjectMapper mapper;
     private static final String ROLE = "ROLE_";
-    private static final String AZP = "azp";
-
 
     public AuthorizationJwt(@Value("${jwt.secret-key}") String secretKey,
-                            @Value("${jwt.json-exp-roles}") String jsonExpRoles,
-                            ObjectMapper mapper) {
+                            @Value("${jwt.json-exp-roles}") String jsonExpRoles) {
         this.secretKey = secretKey;
         this.jsonExpRoles = jsonExpRoles;
-        this.mapper = mapper;
     }
 
     @Bean
@@ -90,35 +83,41 @@ public class AuthorizationJwt implements WebFluxConfigurer {
 
     public Converter<Jwt, Mono<AbstractAuthenticationToken>> grantedAuthoritiesExtractor() {
         var jwtConverter = new JwtAuthenticationConverter();
-        jwtConverter.setJwtGrantedAuthoritiesConverter(jwt ->
-                getRoles(jwt.getClaims(), jsonExpRoles)
-                .stream()
-                 .map(ROLE::concat)
-                .map(SimpleGrantedAuthority::new)
-                .collect(Collectors.toList()));
+        jwtConverter.setJwtGrantedAuthoritiesConverter(jwt -> {
+            String role = getRole(jwt.getClaims(), jsonExpRoles);
+            if (role != null && !role.trim().isEmpty()) {
+                String formattedRole = role.startsWith(ROLE) ? role : ROLE + role;
+                return List.of(new SimpleGrantedAuthority(formattedRole));
+            }
+            log.warn("No role found in JWT for claim: {}", jsonExpRoles);
+            return List.of();
+        });
         return new ReactiveJwtAuthenticationConverterAdapter(jwtConverter);
     }
 
-    private List<String> getRoles(Map<String, Object> claims, String jsonExpClaim) {
+    private String getRole(Map<String, Object> claims, String jsonExpClaim){
         try {
-            var json = mapper.writeValueAsString(claims);
-            var node = mapper.readTree(json).at(jsonExpClaim);
 
-            if (node.isMissingNode() || node.isNull()) {
-                return List.of(); // nunca null
+            Object value = claims.get(jsonExpClaim);
+            // Si el claim es directo (no anidado)
+            if (value != null) {
+                return value.toString();
             }
 
-            if (node.isArray()) {
-                return mapper.convertValue(node, new TypeReference<List<String>>() {});
-            } else if (node.isTextual()) {
-                return List.of(node.asText()); // si es string único
-            } else {
-                return List.of();
+            // Si es path anidado (ej: "realm_access.role")
+            if (jsonExpClaim.contains(".")) {
+                String[] parts = jsonExpClaim.split("\\.", 2); // Split solo una vez
+                Object nested = claims.get(parts[0]);
+                if (nested instanceof Map) {
+                    return getRole((Map<String, Object>) nested, parts[1]);
+                }
             }
 
-        } catch (IOException e) {
+            return null;
+
+        } catch (Exception  e) {
             log.error(e.getMessage());
-            return List.of();
+            return null;
         }
     }
 }

@@ -29,6 +29,7 @@ public class UserHandler {
     private final IUserUseCase userUseCase;
     private final UserDTOMapper userDTOMapper;
 
+    //@PreAuthorize("hasRole('ADMIN')")
     public Mono<ServerResponse> listenSaveUser(ServerRequest serverRequest) {
         log.info("Received request to create new user");
         Mono<CreateUserDTO> userMono = serverRequest.bodyToMono(CreateUserDTO.class);
@@ -55,6 +56,7 @@ public class UserHandler {
                 .doOnError(e -> log.error("Error updating new user", e))
                 .doOnSuccess(resp -> log.info("User updated successfully"));
     }
+
 
 
     public Mono<ServerResponse> listenGetAllUsers(ServerRequest serverRequest) {

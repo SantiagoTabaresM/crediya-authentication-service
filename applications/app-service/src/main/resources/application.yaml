@@ -21,8 +21,8 @@ spring:
           client-id: "myclientid"
 jwt:
   secret-key: my-super-secret-key-1234567890123456
-  expiration-ms': 3600
-  json-exp-roles: "/roles"
+  expiration-ms': 360000
+  json-exp-roles: "role"
 management:
   endpoints:
     web:
