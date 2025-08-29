@@ -1,6 +1,5 @@
 package co.com.pragma.model.auth;
 import lombok.*;
-//import lombok.NoArgsConstructor;
 
 
 @Getter
@@ -9,8 +8,7 @@ import lombok.*;
 @AllArgsConstructor
 @Builder(toBuilder = true)
 public class Auth {
-    private Integer userId;
-    private String email;
-    private String password;
-    private Integer roleId;
+    private Long userId;
+    private String role;
+    private String  token;
 }

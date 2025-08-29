@@ -4,6 +4,6 @@ import co.com.pragma.model.role.Role;
 import reactor.core.publisher.Mono;
 
 public interface RoleRepository {
-    Mono<Role> getRoleById(Integer roleId);
+    Mono<Role> findById(Integer roleId);
 
 }

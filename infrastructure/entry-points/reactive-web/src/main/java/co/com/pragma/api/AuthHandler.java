@@ -1,13 +1,9 @@
 package co.com.pragma.api;
 
-import co.com.pragma.api.dto.CreateUserDTO;
 import co.com.pragma.api.dto.LoginDTO;
-import co.com.pragma.api.dto.UpdateUserDTO;
-import co.com.pragma.api.mapper.LoginDTOMapper;
+import co.com.pragma.api.mapper.AuthDTOMapper;
 import co.com.pragma.api.mapper.UserDTOMapper;
-import co.com.pragma.usecase.auth.AuthUseCase;
 import co.com.pragma.usecase.auth.IAuthUseCase;
-import co.com.pragma.usecase.user.IUserUseCase;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -24,6 +20,8 @@ import reactor.core.publisher.Mono;
 public class AuthHandler {
 
     private final UserDTOMapper loginDTOMapper;
+    private final AuthDTOMapper authDTOMapper;
+
     private final IAuthUseCase authUseCase;
 
 
@@ -34,10 +32,12 @@ public class AuthHandler {
         return loginDTOMono
                 .map(loginDTOMapper::toUser)
                 .flatMap(authUseCase::validateUser)
-                .flatMap(user -> ServerResponse.ok()
+                .flatMap(authUseCase::generateToken)
+                .map(authDTOMapper::toAuthDTO)
+                .flatMap(auth -> ServerResponse.ok()
                         .contentType(MediaType.APPLICATION_JSON)
-                        .bodyValue("Contraseña valida, token JWT generado"))
-                .doOnError(e -> log.error("Error creating JWT", e))
+                        .bodyValue(auth))
+                .doOnError(e -> log.error("Error login user", e))
                 .doOnSuccess(resp -> log.info("JWT created successfully"));
     }
 

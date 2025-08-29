@@ -24,8 +24,10 @@ public class GlobalErrorAttributes extends DefaultErrorAttributes {
             errorAttributes.put("errorType", error.getClass().getSimpleName());
         } else {
             // Error no controlado: mensaje genérico
-            errorAttributes.put("message", "Ocurrió un error inesperado. Por favor, contacte al administrador.");
-            errorAttributes.put("errorType", "InternalServerError");
+            errorAttributes.put("message", error.getMessage());
+            errorAttributes.put("errorType", error.getClass().getSimpleName());
+            //errorAttributes.put("message", "Ocurrió un error inesperado. Por favor, contacte al administrador.");
+            //errorAttributes.put("errorType", "InternalServerError");
         }
 
         errorAttributes.put("path",request.path());

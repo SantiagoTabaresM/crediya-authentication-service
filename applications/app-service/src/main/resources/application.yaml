@@ -17,7 +17,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: "https://idp.example.com/issuer"
+          issuer-uri: "self"
           client-id: "myclientid"
 jwt:
   secret-key: my-super-secret-key-1234567890123456

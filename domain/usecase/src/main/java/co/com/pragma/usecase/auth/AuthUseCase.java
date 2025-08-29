@@ -1,9 +1,12 @@
 package co.com.pragma.usecase.auth;
 
+import co.com.pragma.model.auth.Auth;
+import co.com.pragma.model.role.gateways.RoleRepository;
 import co.com.pragma.model.user.User;
 import co.com.pragma.model.user.gateways.UserRepository;
 import co.com.pragma.model.utils.gateways.Logger;
 import co.com.pragma.model.utils.gateways.PasswordEncoderPort;
+import co.com.pragma.model.utils.gateways.TokenProviderPort;
 import co.com.pragma.model.utils.gateways.TxOperational;
 import co.com.pragma.usecase.user.exception.BussinesException;
 import lombok.RequiredArgsConstructor;
@@ -24,10 +27,12 @@ public class AuthUseCase implements IAuthUseCase{
     private static final Pattern EMAIL_PATTERN = Pattern.compile(EMAIL_REGEX);
 
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
 
     private final Logger logger;
     private final TxOperational txOperational;
     private final PasswordEncoderPort passwordEncoder;
+    private final TokenProviderPort tokenProvider;
 
     @Override
     public Mono<User> validateUser(User user) {
@@ -52,6 +57,40 @@ public class AuthUseCase implements IAuthUseCase{
 
         return errors;
     }
+
+    @Override
+    public Mono<Auth> generateToken(User user) {
+        return getRoleName(user) // obtener rol y userId
+                .flatMap(auth ->
+                        tokenProvider.generateToken(auth.getUserId().toString(), auth.getRole()) // generar JWT
+                                .map(token -> auth.toBuilder()
+                                        .token(token) // asignar token
+                                        .build()
+                                )
+                );
+    }
+
+    private Mono<Auth> getRoleName(User user) {
+        return roleRepository.findById(user.getRoleId())
+                .map(role ->
+                    Auth.builder()
+                            .userId(user.getId())
+                            .role(role.getName()) // asignar el nombre del rol
+                            .token(null) // token null por ahora
+                            .build()
+                )
+                .switchIfEmpty(Mono.defer(() -> {
+                    logger.error("Role not found with email: " + user.getRoleId(), null);
+                    Map<String, String> errors = createErrorMap();
+                    errors.put("Role", "Role not found with email: " + user.getRoleId());
+                    return Mono.error(new BussinesException("Validation errors", errors));
+                }));
+    }
+
+
+
+
+
 
     private Mono<User> validatePassword(User user) {
         return userRepository.findByEmail(user.getEmail())
