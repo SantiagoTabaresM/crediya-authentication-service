@@ -1,6 +1,6 @@
 package co.com.pragma.api.config;
 
-import co.com.pragma.model.utils.gateways.TokenProviderPort;
+import co.com.pragma.api.dto.AuthDTO;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -12,40 +12,42 @@ import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 @Component
-public class JwtTokenProviderAdapter implements TokenProviderPort {
+public class JwtTokenProvider {
 
-    private final String secretKey;
     private Key key;
 
     private final long expirationMs;
 
 
-    public JwtTokenProviderAdapter(@Value("${jwt.secret-key}") String secretKey,
-                                   @Value("${jwt.expiration-ms}") long expirationMs) {
-        this.secretKey = secretKey;
+    public JwtTokenProvider(@Value("${jwt.secret-key}") String secretKey,
+                            @Value("${jwt.expiration-ms}") long expirationMs) {
+
         this.expirationMs = expirationMs;
         this.key = Keys.hmacShaKeyFor(secretKey.getBytes());
     }
 
 
-    @Override
+
     public Mono<String> generateToken(String username, String role) {
         return Mono.fromSupplier(() -> createToken(username, role));
     }
 
+    public Mono<AuthDTO> generateToken(AuthDTO auth) {
+        return generateToken(auth.document(), auth.role()) // devuelve Mono<String> con el token
+                .map(token -> new AuthDTO(auth.document(), token, auth.role()));
+    }
 
-    public String createToken(String userId, String role) {
+    public String createToken(String document, String role) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("role", role);
 
         return Jwts.builder()
-                .setIssuer("self") // Tu propio issuer
-                .setAudience("myclientid") // Client ID si lo validas
+                //.setIssuer("self") // Tu propio issuer
+                //.setAudience("myclientid") // Client ID si lo validas
                 .setClaims(claims)
-                .setSubject(userId)
+                .setSubject(document)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + expirationMs))
                 .signWith(key, SignatureAlgorithm.HS256)

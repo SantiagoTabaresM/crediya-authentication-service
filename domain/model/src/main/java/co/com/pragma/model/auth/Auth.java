@@ -8,7 +8,7 @@ import lombok.*;
 @AllArgsConstructor
 @Builder(toBuilder = true)
 public class Auth {
-    private Long userId;
+    private String document;
     private String role;
-    private String  token;
+
 }

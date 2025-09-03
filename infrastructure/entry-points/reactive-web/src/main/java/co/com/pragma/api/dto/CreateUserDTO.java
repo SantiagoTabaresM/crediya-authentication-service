@@ -9,6 +9,7 @@ public record CreateUserDTO(
         LocalDate birthDate,
         String address,
         String document,
+        Integer roleId,
         String phone,
         String email,
         String password,

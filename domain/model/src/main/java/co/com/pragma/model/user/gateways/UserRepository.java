@@ -4,6 +4,8 @@ import co.com.pragma.model.user.User;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+
 // PUERTOS SECUNDARIOS
 public interface UserRepository {
 
@@ -17,10 +19,12 @@ public interface UserRepository {
 
     Mono<Boolean> existsByEmail(String email);
 
+    Mono<Boolean> existsByDocument(String document);
+
     Mono<Boolean> existsByDocumentAndEmail(String document, String email);
 
     Mono<User> findByEmail(String email);
 
-
+    Flux<User> findByDocument(List<String> document);
 
 }

@@ -7,5 +7,6 @@ import reactor.core.publisher.Mono;
 public interface IAuthUseCase {
     public Mono<User> validateUser(User user);
 
-    public Mono<Auth> generateToken(User user);
+    public  Mono<Auth> getRoleInfo(User user);
+
 }

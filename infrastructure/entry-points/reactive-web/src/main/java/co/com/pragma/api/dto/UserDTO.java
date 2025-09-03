@@ -11,6 +11,7 @@ public record UserDTO(
         LocalDate birthDate,
         String address,
         String document,
+        Integer roleId,
         String phone,
         String email,
         Integer baseSalary

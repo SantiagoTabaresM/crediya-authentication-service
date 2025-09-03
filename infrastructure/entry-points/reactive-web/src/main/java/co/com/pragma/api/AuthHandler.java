@@ -1,5 +1,6 @@
 package co.com.pragma.api;
 
+import co.com.pragma.api.config.JwtTokenProvider;
 import co.com.pragma.api.dto.LoginDTO;
 import co.com.pragma.api.mapper.AuthDTOMapper;
 import co.com.pragma.api.mapper.UserDTOMapper;
@@ -21,6 +22,7 @@ public class AuthHandler {
 
     private final UserDTOMapper loginDTOMapper;
     private final AuthDTOMapper authDTOMapper;
+    private final JwtTokenProvider jwt;
 
     private final IAuthUseCase authUseCase;
 
@@ -32,8 +34,9 @@ public class AuthHandler {
         return loginDTOMono
                 .map(loginDTOMapper::toUser)
                 .flatMap(authUseCase::validateUser)
-                .flatMap(authUseCase::generateToken)
+                .flatMap(authUseCase::getRoleInfo)
                 .map(authDTOMapper::toAuthDTO)
+                .flatMap(jwt::generateToken)
                 .flatMap(auth -> ServerResponse.ok()
                         .contentType(MediaType.APPLICATION_JSON)
                         .bodyValue(auth))

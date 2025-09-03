@@ -2,15 +2,13 @@ package co.com.pragma.r2dbc;
 
 import co.com.pragma.model.role.Role;
 import co.com.pragma.model.role.gateways.RoleRepository;
-import co.com.pragma.model.user.User;
-import co.com.pragma.model.user.gateways.UserRepository;
+
 import co.com.pragma.r2dbc.entity.RoleEntity;
-import co.com.pragma.r2dbc.entity.UserEntity;
+
 import co.com.pragma.r2dbc.helper.ReactiveAdapterOperations;
 import org.reactivecommons.utils.ObjectMapper;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
-import reactor.core.publisher.Flux;
+
 import reactor.core.publisher.Mono;
 
 @Repository
@@ -29,5 +27,9 @@ public class RoleRepositoryAdapter extends ReactiveAdapterOperations<
         return super.findById(id);
     }
 
+    @Override
+    public Mono<Boolean> existsById(Integer id) {
+        return repository.existsById(id);
+    }
 
 }

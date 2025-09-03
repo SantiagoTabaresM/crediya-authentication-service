@@ -1,9 +1,6 @@
 package co.com.pragma.api.mapper;
 
-import co.com.pragma.api.dto.CreateUserDTO;
-import co.com.pragma.api.dto.LoginDTO;
-import co.com.pragma.api.dto.UpdateUserDTO;
-import co.com.pragma.api.dto.UserDTO;
+import co.com.pragma.api.dto.*;
 import co.com.pragma.model.user.User;
 import org.mapstruct.Mapper;
 
@@ -23,5 +20,7 @@ public interface UserDTOMapper {
     User updateUserDTOtoUser(UpdateUserDTO updateUserDTO);
 
     User toUser(LoginDTO loginDTO);
+
+    UserBasicInfDTO toUserBasicInfDTO(User user);
 
 }
