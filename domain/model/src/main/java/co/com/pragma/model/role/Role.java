@@ -1,7 +1,5 @@
 package co.com.pragma.model.role;
 import lombok.*;
-//import lombok.NoArgsConstructor;
-
 
 @Getter
 @Setter
