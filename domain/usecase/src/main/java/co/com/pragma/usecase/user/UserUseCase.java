@@ -1,8 +1,10 @@
 package co.com.pragma.usecase.user;
 
+import co.com.pragma.model.role.gateways.RoleRepository;
 import co.com.pragma.model.user.User;
 import co.com.pragma.model.user.gateways.UserRepository;
 import co.com.pragma.model.utils.gateways.Logger;
+import co.com.pragma.model.utils.gateways.PasswordEncoderPort;
 import co.com.pragma.model.utils.gateways.TxOperational;
 import co.com.pragma.usecase.user.exception.BussinesException;
 
@@ -12,6 +14,7 @@ import reactor.core.publisher.Mono;
 
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -29,15 +32,23 @@ public class UserUseCase implements IUserUseCase {
     private static final String FIELD_EMAIL = "email";
     private static final String FIELD_NAME = "name";
     private static final String FIELD_LAST_NAME = "last_name";
+    private static final String FIELD_DOCUMENT = "document";
     private static final String FIELD_BASE_SALARY = "base_salary";
-    private static final String FIELD_ID = "id";
+    private static final String FIELD_ROLE = "role";
+    private static final String ERROR_VALIDATION = "Validation errors";
+
 
     private static final String EMAIL_REGEX = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
     private static final Pattern EMAIL_PATTERN = Pattern.compile(EMAIL_REGEX);
     
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+
+
     private final Logger logger;
     private final TxOperational txOperational;
+    private final PasswordEncoderPort passwordEncoder;
+
 
 
 
@@ -51,21 +62,115 @@ public class UserUseCase implements IUserUseCase {
         return txOperational.execute(() -> {
             logger.info("Attempting to save user with email: " + user.getEmail());
             return validate(user, this::validateCreateUser)
-                    .flatMap(validatedUser ->
-                            userRepository.existsByEmail(validatedUser.getEmail())
-                                    .flatMap(exists -> {
-                                        if (Boolean.TRUE.equals(exists)) {
-                                            logger.error("Email already exists: " + validatedUser.getEmail(), null);
-                                            Map<String, String> errors = createErrorMap();
-                                            errors.put(FIELD_EMAIL, "The email address is already registered by another user");
-                                            return Mono.error(new BussinesException("Validation errors", errors));
-                                        }
-                                        return userRepository.save(validatedUser)
-                                                .doOnSuccess(saved -> logger.info("User saved successfully with id: " + saved.getId()));
-                                    })
-                    );
+                    .flatMap(this::checkIfEmailExists)
+                    .flatMap(this::checkIfDocumentExists)
+                    .flatMap(this::checkIfRoleExists)
+                    .flatMap(this::encryptPassword)
+                    .flatMap(userRepository::save)
+                    .doOnSuccess(saved -> logger.info("User saved successfully with id: " + saved.getId()));
         });
     }
+
+    /**
+     * Verifica si el correo ya existe en la BD.
+     */
+    private Mono<User> checkIfEmailExists(User user) {
+        return userRepository.existsByEmail(user.getEmail())
+                .flatMap(exists -> {
+                    if (Boolean.TRUE.equals(exists)) {
+                        logger.error("Email already exists: " + user.getEmail(), null);
+                        Map<String, String> errors = createErrorMap();
+                        errors.put(FIELD_EMAIL, "The email address is already registered by another user");
+                        return Mono.error(new BussinesException(ERROR_VALIDATION, errors));
+                    }
+                    return Mono.just(user);
+                });
+    }
+
+    /**
+     * Verifica si el documento ya existe en la BD.
+     */
+    private Mono<User> checkIfDocumentExists(User user) {
+        return userRepository.existsByDocument(user.getDocument())
+                .flatMap(exists -> {
+                    if (Boolean.TRUE.equals(exists)) {
+                        logger.error("Document already exists: " + user.getDocument(), null);
+                        Map<String, String> errors = createErrorMap();
+                        errors.put(FIELD_DOCUMENT, "The document already registered by another user");
+                        return Mono.error(new BussinesException(ERROR_VALIDATION, errors));
+                    }
+                    return Mono.just(user);
+                });
+    }
+
+
+    /**
+     * Verifica si el rol existe en la BD.
+     */
+    private Mono<User> checkIfRoleExists(User user) {
+        return roleRepository.existsById(user.getRoleId())
+                .flatMap(exists -> {
+                    if (Boolean.FALSE.equals(exists)) {
+                        logger.error("Role does not exist: " + user.getRoleId(), null);
+                        Map<String, String> errors = createErrorMap();
+                        errors.put(FIELD_ROLE, "The role does not exist");
+                        return Mono.error(new BussinesException(ERROR_VALIDATION, errors));
+                    }
+                    return Mono.just(user);
+                });
+    }
+
+    /**
+     * Encripta la contraseña del usuario.
+     */
+    private Mono<User> encryptPassword(User user) {
+        return passwordEncoder.encode(user.getPassword()) // devuelve Mono<String>
+                .map(encodedPassword ->
+                        user.toBuilder()
+                                .password(encodedPassword) // aquí sí es un String
+                                .build()
+                );
+    }
+
+    /**
+     * Verifica si un usuario existe por su documento y email.
+     * Utilizado por micreoservicio de solicitudes de credito para validar usuario.
+     *
+     * @param document El documento del usuario.
+     * @param email    El email del usuario.
+     * @return Un `Mono` que emite `true` si el usuario existe, `false` en caso contrario.
+     */
+    public Mono<Boolean> existsByDocumentAndEmail(String document, String email) {
+        logger.info("Checking if user exists with document: " + document + "  email: " + email);
+        return userRepository.existsByDocumentAndEmail(document, email)
+                .doOnSuccess(exists -> {
+                    if (Boolean.TRUE.equals(exists)) {
+                        logger.info("User already exists with document: " + document + "  email: " + email);
+                    } else {
+                        logger.info("No user exists with document: " + document + " and email: " + email);
+                    }
+                });
+    }
+
+
+    /**
+     * Obtiene los usuarios cuyos documentos están en la lista proporcionada.
+     * Esta función es útil para buscar múltiples usuarios por sus documentos
+     * Se utiliza para entregarle a microservico de SOLICITUDES informacion de usuario.
+     * @param documents Lista de documentos para buscar usuarios.
+     * @return Un `Flux` que emite los usuarios encontrados.
+     */
+    @Override
+    public Flux<User> getUsersByDocuments(List<String> documents) {
+        return userRepository.findByDocument(documents)
+                .doOnComplete(() -> logger.info("Finished fetching all users"));
+    }
+
+
+
+
+
+
 
     /**
      * Actualiza un usuario existente en la base de datos.
@@ -85,7 +190,7 @@ public class UserUseCase implements IUserUseCase {
                                             logger.error("Email already exists: " + validatedUser.getEmail(), null);
                                             Map<String, String> errors = createErrorMap();
                                             errors.put(FIELD_EMAIL, "The email address is already registered by another user");
-                                            return Mono.error(new BussinesException("Validation errors", errors));
+                                            return Mono.error(new BussinesException(ERROR_VALIDATION , errors));
                                         }
                                         return userRepository.save(validatedUser)
                                                 .doOnSuccess(updated -> logger.info("User updated successfully with id: " + updated.getId()));
@@ -93,6 +198,7 @@ public class UserUseCase implements IUserUseCase {
                     );
         });
     }
+
 
     /**
      * Obtiene todos los usuarios de la base de datos.
@@ -134,17 +240,10 @@ public class UserUseCase implements IUserUseCase {
                 .doOnSuccess(unused -> logger.info("User deleted successfully with id: " + id));
     }
 
-    public Mono<Boolean> existsByDocumentAndEmail(String document, String email) {
-        logger.info("Checking if user exists with document: " + document + "  email: " + email);
-        return userRepository.existsByDocumentAndEmail(document, email)
-                .doOnSuccess(exists -> {
-                    if (Boolean.TRUE.equals(exists)) {
-                        logger.info("User already exists with document: " + document + "  email: " + email);
-                    } else {
-                        logger.info("No user exists with document: " + document + " and email: " + email);
-                    }
-                });
-    }
+
+
+
+
 
 
     private Map<String, String> validateCreateUser(User user) {

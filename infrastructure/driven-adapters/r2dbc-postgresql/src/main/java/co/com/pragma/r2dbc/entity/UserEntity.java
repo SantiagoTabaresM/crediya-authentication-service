@@ -27,6 +27,8 @@ public class UserEntity {
     private String document;
     private String phone;
     private String email;
+    private String password;
+    private Integer roleId;
     private Integer baseSalary;
 
 

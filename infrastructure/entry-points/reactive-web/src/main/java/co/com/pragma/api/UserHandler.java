@@ -10,14 +10,17 @@ import co.com.pragma.usecase.user.IUserUseCase;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 
 
-import java.util.Collections;
+import java.util.List;
 
 @Log4j2
 @Component
@@ -28,6 +31,7 @@ public class UserHandler {
     private final IUserUseCase userUseCase;
     private final UserDTOMapper userDTOMapper;
 
+    @PreAuthorize("hasRole('ADMIN') or hasRole('ADVISOR')")
     public Mono<ServerResponse> listenSaveUser(ServerRequest serverRequest) {
         log.info("Received request to create new user");
         Mono<CreateUserDTO> userMono = serverRequest.bodyToMono(CreateUserDTO.class);
@@ -42,6 +46,22 @@ public class UserHandler {
                 .doOnSuccess(resp -> log.info("User created successfully"));
     }
 
+    public Mono<ServerResponse> listenGetUsersByDocuments(ServerRequest serverRequest) {
+        return serverRequest.bodyToMono(new ParameterizedTypeReference<List<String>>() {})
+                .doOnNext(documents -> log.info("📥 Lista de documentos recibida: {}", documents))
+                .flatMapMany(userUseCase::getUsersByDocuments)
+                .map(userDTOMapper::toUserBasicInfDTO)
+                .doOnNext(user -> log.debug("➡️ Usuario mapeado: {}", user)) // log por cada usuario intermedio
+                .collectList()
+                .doOnNext(users -> log.info("📤 Lista final de usuarios a retornar: {}", users))
+                .flatMap(users -> ServerResponse.status(HttpStatus.CREATED)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .bodyValue(users)
+                );
+    }
+
+
+
     public Mono<ServerResponse> listenUpdateUser(ServerRequest serverRequest) {
         Mono<UpdateUserDTO> userMono = serverRequest.bodyToMono(UpdateUserDTO.class);
         return userMono
@@ -54,6 +74,7 @@ public class UserHandler {
                 .doOnError(e -> log.error("Error updating new user", e))
                 .doOnSuccess(resp -> log.info("User updated successfully"));
     }
+
 
 
     public Mono<ServerResponse> listenGetAllUsers(ServerRequest serverRequest) {

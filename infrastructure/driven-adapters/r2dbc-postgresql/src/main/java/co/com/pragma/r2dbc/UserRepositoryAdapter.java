@@ -10,6 +10,8 @@ import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+
 @Repository
 public class UserRepositoryAdapter extends ReactiveAdapterOperations<
         User/* change for domain model */,
@@ -26,8 +28,15 @@ public class UserRepositoryAdapter extends ReactiveAdapterOperations<
     public Mono<User> save(User user) {
         return super.save(user);
     }
+
     @Override
     @Transactional
+    public Flux<User> findByDocument(List<String> document) {
+        return repository.findByDocumentIn(document).map(this::toEntity);
+    }
+
+
+    @Override
     public Flux<User> findAll() {
         return super.findAll();
     }
@@ -41,6 +50,12 @@ public class UserRepositoryAdapter extends ReactiveAdapterOperations<
 
     @Override
     @Transactional
+    public Mono<User> findByEmail(String email) {
+        return repository.findByEmail(email).map(this::toEntity);
+    }
+
+    @Override
+    @Transactional
     public Mono<Void> deleteById(Long id) {
         return repository.deleteById(id);
     }
@@ -49,6 +64,11 @@ public class UserRepositoryAdapter extends ReactiveAdapterOperations<
     @Transactional
     public Mono<Boolean> existsByEmail(String email) {
         return repository.existsByEmail(email);
+    }
+
+    @Override
+    public Mono<Boolean> existsByDocument(String document) {
+        return repository.existsByDocument(document);
     }
 
     @Override

@@ -4,6 +4,8 @@ import co.com.pragma.model.user.User;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+
 // PUERTOS PRIMARIOS
 
 public interface IUserUseCase {
@@ -20,5 +22,6 @@ public interface IUserUseCase {
 
     public Mono<Boolean> existsByDocumentAndEmail(String document, String email);
 
+    public Flux<User>  getUsersByDocuments(List<String> documents);
 
 }

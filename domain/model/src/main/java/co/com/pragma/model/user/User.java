@@ -20,6 +20,8 @@ public class User {
     private LocalDate birthDate;
     private String address;
     private String document;
+    private String password;
+    private Integer roleId;
     private String phone;
     private String email;
     private Integer baseSalary;
