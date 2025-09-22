@@ -54,3 +54,38 @@ Para desplegar el microservicio localmente utilizando Docker, se proporciona un 
 **Nota:** Hay un segundo `docker-compose-proxy.yml` en el cual se utiliza gninx como proxy inverso para gestionar las solicitudes a los microservicios. Para ell funcionamiento de este es necesario crear una carpeta llamada `nginx` y dentro de esta colocar el archivo `default.conf` que se encuentra en la carpeta `deployment`.
 
 ![CrediYa](docs/docker_execute.png)
+
+
+# Despliegue en AWS
+
+El despliegue en AWS se realiza utilizando servicios como Amazon ECS (Elastic Container Service) para gestionar los contenedores Docker y Amazon RDS (Relational Database Service) para la base de datos PostgreSQL. A continuación, se describen los pasos generales para desplegar el microservicio en AWS:
+
+1. Publicar imagen docker en Amazon ECR (Elastic Container Registry).
+
+![CrediYa](docs/ECR.png)
+
+2. Crear una instancia de base de datos PostgreSQL en Amazon RDS.
+
+![CrediYa](docs/RDS.png)
+
+**Nota:** En ambiente local se utiliza una base de datos por cada microservicio, pero en AWS se utiliza una sola base de datos para todos los microservicios, separando la lógica por esquemas.
+
+3. Configurar un clúster de Amazon ECS
+
+![CrediYa](docs/clusterECS.png)
+
+
+4. Definir una tarea que utilice la imagen Docker publicada en ECR.
+
+![CrediYa](docs/taskECS.png)
+
+5. Crear los servicios en el clúster que ejecute la tarea definida.
+
+![CrediYa](docs/executeECS.png)
+
+6. Configurar un Application Load Balancer (ALB) para distribuir el tráfico entre las instancias del servicio.
+7. Ejecutar el servicio y verificar que esté funcionando correctamente.
+
+![CrediYa](docs/authAWS.png)
+![CrediYa](docs/loanAWS.png)
+![CrediYa](docs/reportAWS.png)
