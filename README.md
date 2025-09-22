@@ -1,4 +1,4 @@
-![CrediYa](CrediYa_logo.png)
+![CrediYa](docs/CrediYa_logo.png)
 
 
 # CrediYa - crediya-authentication-service
@@ -34,5 +34,23 @@ Este módulo es el más externo de la arquitectura, es el encargado de ensamblar
 
 # Base de datos 
 
-Para la base de datos se utiliza PostgreSQL en Supabase, y se gestiona a través de R2DBC para mantener el enfoque reactivo en todas las capas del microservicio. La configuración de la conexión a la base de datos se encuentra en el archivo `application.yml`, donde se especifican los detalles necesarios para establecer la conexión.
-![CrediYa](BD_authentication-service.png)
+Para la base de datos se utiliza PostgreSQL originalmente para pruebas en Supabase, para despues  ser cambiada utilizando docker, y se gestiona a través de R2DBC para mantener el enfoque reactivo en todas las capas del microservicio. La configuración de la conexión a la base de datos se encuentra en el archivo `application.yml`, donde se especifican los detalles necesarios para establecer la conexión.
+![CrediYa](docs/BD_authentication-service.png)
+
+# Despliegue local con Docker
+
+Para desplegar el microservicio localmente utilizando Docker, se proporciona un archivo `docker-compose.yml` que define los servicios necesarios, incluyendo la base de datos PostgreSQL y el propio microservicio. A continuación, se detallan los pasos para ejecutar el despliegue:
+1. Asegúrate de tener Docker y Docker Compose instalados en tu máquina.
+2. Ya que este repo se despliega junto a otros microservicios se establece el `docker-compose.yml` a un nivel superior, en este caso en la carpeta `crediya-authentication-service`
+3. Se crea una carpeta llamada `scripts` y dentro de esta otra llamada `db_auth` donde se coaca el script `init.sql` para inicializar la base de datos con las tablas necesarias .
+4. Se debe ejecutar el siguiente comando en la terminal, ubicado en la carpeta donde se encuentra el archivo `docker-compose.yml`:
+   ```bash
+   docker-compose up --build
+   ```
+5. Docker Compose se encargará de construir las imágenes necesarias y levantar los contenedores definidos
+
+**Nota:** En la carpeta `deployment` se encuentran los archivos `Dockerfile`, `docker-compose.yml`, el script de inicialización de la BD utilizados para el despliegue.'
+
+**Nota:** Hay un segundo `docker-compose-proxy.yml` en el cual se utiliza gninx como proxy inverso para gestionar las solicitudes a los microservicios. Para ell funcionamiento de este es necesario crear una carpeta llamada `nginx` y dentro de esta colocar el archivo `default.conf` que se encuentra en la carpeta `deployment`.
+
+![CrediYa](docs/docker_execute.png)
